@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code Audit Report — Bike Count Estimation</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/reveal.js@4/dist/reveal.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/reveal.js@4/dist/theme/black.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/reveal.js@4/plugin/highlight/monokai.css"
+    />
+    <style>
+      :root {
+        --severity-critical: #ff4444;
+        --severity-high: #ff8c00;
+        --severity-medium: #ffd700;
+        --severity-low: #4a9eff;
+      }
+      .severity-badge {
+        display: inline-block;
+        padding: 4px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.7em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      .severity-critical {
+        background: var(--severity-critical);
+        color: #fff;
+      }
+      .severity-high {
+        background: var(--severity-high);
+        color: #fff;
+      }
+      .severity-medium {
+        background: var(--severity-medium);
+        color: #000;
+      }
+      .severity-low {
+        background: var(--severity-low);
+        color: #fff;
+      }
+      .finding-file {
+        font-family: monospace;
+        font-size: 0.6em;
+        color: #888;
+        margin-bottom: 8px;
+      }
+      .code-comparison {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        text-align: left;
+      }
+      .code-comparison .label {
+        font-size: 0.6em;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 4px;
+      }
+      .code-comparison pre {
+        font-size: 0.45em;
+      }
+      .summary-table {
+        margin: 0 auto;
+        border-collapse: collapse;
+        font-size: 0.7em;
+      }
+      .summary-table th,
+      .summary-table td {
+        padding: 8px 20px;
+        border: 1px solid #555;
+        text-align: center;
+      }
+      .summary-table th {
+        background: #333;
+      }
+      .category-stats {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .stat-box {
+        text-align: center;
+        padding: 10px 20px;
+      }
+      .stat-box .number {
+        font-size: 2em;
+        font-weight: bold;
+      }
+      .stat-box .label {
+        font-size: 0.6em;
+        color: #888;
+      }
+      .recommendations li {
+        text-align: left;
+        margin-bottom: 12px;
+        font-size: 0.8em;
+      }
+      h2 {
+        color: #58a6ff !important;
+      }
+      h3 {
+        color: #c9d1d9 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!-- TITLE SLIDE -->
+        <section>
+          <h1>Code Audit Report</h1>
+          <h3>Bike Count Estimation</h3>
+          <p style="color: #888; font-size: 0.7em">2026-05-31</p>
+          <div class="category-stats">
+            <div class="stat-box">
+              <div class="number" style="color: var(--severity-critical)">
+                2
+              </div>
+              <div class="label">Critical</div>
+            </div>
+            <div class="stat-box">
+              <div class="number" style="color: var(--severity-high)">
+                4
+              </div>
+              <div class="label">High</div>
+            </div>
+            <div class="stat-box">
+              <div class="number" style="color: var(--severity-medium)">
+                11
+              </div>
+              <div class="label">Medium</div>
+            </div>
+            <div class="stat-box">
+              <div class="number" style="color: var(--severity-low)">
+                1
+              </div>
+              <div class="label">Low</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EXECUTIVE SUMMARY -->
+        <section>
+          <h2>Executive Summary</h2>
+          <table class="summary-table">
+            <tr>
+              <th>Category</th>
+              <th style="color: var(--severity-critical)">Critical</th>
+              <th style="color: var(--severity-high)">High</th>
+              <th style="color: var(--severity-medium)">Medium</th>
+              <th style="color: var(--severity-low)">Low</th>
+            </tr>
+            <tr>
+              <td>&#9889; Performance</td>
+              <td>0</td>
+              <td>3</td>
+              <td>4</td>
+              <td>0</td>
+            </tr>
+            <tr>
+              <td>&#128737; Reliability</td>
+              <td>2</td>
+              <td>1</td>
+              <td>4</td>
+              <td>0</td>
+            </tr>
+            <tr>
+              <td>&#128274; Security</td>
+              <td>0</td>
+              <td>0</td>
+              <td>3</td>
+              <td>1</td>
+            </tr>
+          </table>
+          <p style="margin-top: 30px; font-size: 0.7em; color: #888">
+            Overall Risk Rating:
+            <strong style="color: var(--severity-critical);">HIGH</strong>
+          </p>
+          <p style="font-size: 0.6em; color: #888">
+            2 critical findings require immediate attention: broken early stopping and data leakage in cross-validation.
+          </p>
+        </section>
+
+        <!-- RELIABILITY SECTION -->
+        <section>
+          <section>
+            <h2>&#128737; Reliability</h2>
+            <p>7 findings</p>
+            <div class="category-stats">
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-critical)">2</div>
+                <div class="label">Critical</div>
+              </div>
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-high)">1</div>
+                <div class="label">High</div>
+              </div>
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-medium)">4</div>
+                <div class="label">Medium</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- R1: Early stopping broken -->
+          <section>
+            <span class="severity-badge severity-critical">Critical</span>
+            <h3>Early Stopping Broken — Shallow state_dict Copy</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:865</div>
+            <p style="font-size: 0.7em"><code>model.state_dict().copy()</code> creates a shallow dict copy where tensor values still share storage with model parameters; subsequent optimizer steps overwrite the &quot;saved&quot; best weights, making <code>load_state_dict(best_state)</code> a no-op.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>if val_mse &lt; best_val_mse:
+    best_val_mse = val_mse
+    best_state = model.state_dict().copy()
+    patience_counter = 0</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>import copy
+
+if val_mse &lt; best_val_mse:
+    best_val_mse = val_mse
+    best_state = copy.deepcopy(model.state_dict())
+    patience_counter = 0</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R2: Data leakage in CV -->
+          <section>
+            <span class="severity-badge severity-critical">Critical</span>
+            <h3>Data Leakage in Cross-Validation</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:1177</div>
+            <p style="font-size: 0.7em"><code>preprocessor.fit_transform(df_clean)</code> fits the StandardScaler on ALL data (including future validation folds), leaking validation-set statistics into every training fold and producing optimistically biased CV scores.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>X_full = preprocessor.fit_transform(df_clean)
+y_full_h1 = df_clean["target_h1"].values
+
+for fold, (train_idx, val_idx) in enumerate(tscv.split(X_full)):
+    X_tr, X_vl = X_full[train_idx], X_full[val_idx]
+    y_tr, y_vl = y_full_h1[train_idx], y_full_h1[val_idx]</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>y_full_h1 = df_clean["target_h1"].values
+
+for fold, (train_idx, val_idx) in enumerate(tscv.split(df_clean)):
+    pre_cv = ColumnTransformer(
+        transformers=preprocessor.transformers,
+        remainder="drop")
+    X_tr = pre_cv.fit_transform(df_clean.iloc[train_idx])
+    X_vl = pre_cv.transform(df_clean.iloc[val_idx])
+    y_tr, y_vl = y_full_h1[train_idx], y_full_h1[val_idx]</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R3: Inference crashes without target -->
+          <section>
+            <span class="severity-badge severity-high">High</span>
+            <h3>Inference Pipeline Crashes Without BikeCount Column</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:1050</div>
+            <p style="font-size: 0.7em">When <code>has_target=False</code>, <code>build_features</code> skips lag/rolling feature creation, but the fitted <code>ColumnTransformer</code> expects those columns &mdash; <code>pre.transform(df_eval)</code> raises KeyError on the missing lag columns.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim># In build_features:
+if target_col in df.columns:
+    df = add_lag_features(df, target_col)
+    df = add_rolling_features(df, target_col)
+
+# In evaluate_final_model:
+X_eval = pre.transform(df_eval)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>if target_col in df.columns:
+    df = add_lag_features(df, target_col)
+    df = add_rolling_features(df, target_col)
+else:
+    # Placeholder columns for preprocessor compatibility
+    lags = [1, 2, 3, 6, 12, 24, 48]
+    for lag in lags:
+        df[f"lag_{lag}"] = 0.0
+    for w in [3, 6, 12, 24]:
+        df[f"rolling_mean_{w}"] = 0.0
+        df[f"rolling_std_{w}"] = 0.0</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R4: LightGBM early stopping same set -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Early Stopping Uses Same Set as Final Evaluation</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:720</div>
+            <p style="font-size: 0.7em">The validation set is used both as the early-stopping monitor AND as the final MSE evaluation set, producing an optimistically biased performance estimate.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>lgb_h1.fit(
+    X_train, y_train_h1,
+    eval_set=[(X_val, y_val_h1)],
+)
+pred_lgb_h1 = lgb_h1.predict(X_val)
+mse_lgb_h1 = mean_squared_error(y_val_h1, pred_lgb_h1)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim># Split validation into early-stop monitor and held-out test
+es_split = int(len(X_val) * 0.5)
+X_es, X_test = X_val[:es_split], X_val[es_split:]
+y_es, y_test = y_val_h1[:es_split], y_val_h1[es_split:]
+
+lgb_h1.fit(X_train, y_train_h1, eval_set=[(X_es, y_es)])
+pred_lgb_h1 = lgb_h1.predict(X_test)
+mse_lgb_h1 = mean_squared_error(y_test, pred_lgb_h1)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R5: Non-deterministic GPU training -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Non-Deterministic GPU Training</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:29</div>
+            <p style="font-size: 0.7em"><code>torch.manual_seed()</code> alone does not guarantee reproducibility on CUDA devices; without <code>torch.cuda.manual_seed_all()</code> and <code>cudnn.deterministic=True</code>, MLP results vary across runs.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(RANDOM_SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R6: No file existence check -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>No File Existence Check Before Loading</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:54</div>
+            <p style="font-size: 0.7em">If the dataset file does not exist, <code>pd.read_excel()</code> raises a generic error deep in openpyxl without indicating which path was tried.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>TRAIN_DATA_PATH = Path("challenge_public_dataset.xlsx")
+
+if TRAIN_DATA_PATH.suffix == ".xlsx":
+    df_raw = pd.read_excel(TRAIN_DATA_PATH)
+else:
+    df_raw = pd.read_csv(TRAIN_DATA_PATH)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>TRAIN_DATA_PATH = Path("challenge_public_dataset.xlsx")
+
+if not TRAIN_DATA_PATH.exists():
+    raise FileNotFoundError(
+        f"Training data not found at: {TRAIN_DATA_PATH.resolve()}\n"
+        "Place the dataset file in the notebook directory."
+    )
+
+if TRAIN_DATA_PATH.suffix == ".xlsx":
+    df_raw = pd.read_excel(TRAIN_DATA_PATH)
+else:
+    df_raw = pd.read_csv(TRAIN_DATA_PATH)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- R7: Hardcoded column access -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Hardcoded Column Access Without Validation</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:74</div>
+            <p style="font-size: 0.7em">Direct access to columns like <code>df_raw["Weekday"]</code> with no upfront validation; if the input file has renamed or missing columns, the notebook fails with an opaque KeyError deep in feature engineering.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>print("Unique 'Weekday' values:")
+print(df_raw["Weekday"].unique())
+print(f"\nUnique 'Weather' values:")
+print(df_raw["Weather"].unique())</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>REQUIRED_COLS = ["Weekday", "Weather", "BikeCount", "Hour",
+                 "Month", "Day", "Temperature (&deg;C)",
+                 "Humidity (%)", "Wind (km/h)", "Rain (mm)"]
+missing = [c for c in REQUIRED_COLS if c not in df_raw.columns]
+if missing:
+    raise ValueError(
+        f"Missing required columns: {missing}\n"
+        f"Found: {df_raw.columns.tolist()}"
+    )</code></pre>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- PERFORMANCE SECTION -->
+        <section>
+          <section>
+            <h2>&#9889; Performance</h2>
+            <p>7 findings</p>
+            <div class="category-stats">
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-high)">3</div>
+                <div class="label">High</div>
+              </div>
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-medium)">4</div>
+                <div class="label">Medium</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- P1: Row-wise df.apply() in add_daylight_features -->
+          <section>
+            <span class="severity-badge severity-high">High</span>
+            <h3>Row-wise df.apply() in add_daylight_features</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:311</div>
+            <p style="font-size: 0.7em">Two <code>df.apply(lambda, axis=1)</code> calls iterate row-by-row through the entire DataFrame to look up pre-computed solar values; a vectorized merge eliminates the Python loop overhead.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>sunrise = df.apply(
+    lambda r: solar[(int(r["Month"]), int(r["Day"]))][0],
+    axis=1)
+sunset = df.apply(
+    lambda r: solar[(int(r["Month"]), int(r["Day"]))][1],
+    axis=1)
+hour_f = df["Hour"].astype(float)
+df["hours_since_sunrise"] = hour_f - sunrise
+df["hours_until_sunset"] = sunset - hour_f</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>solar_df = pd.DataFrame(
+    [(m, d, *_solar_event_hours(m, d))
+     for m, d in zip(unique_dates["Month"],
+                     unique_dates["Day"])],
+    columns=["Month", "Day", "sunrise", "sunset"]
+)
+df = df.merge(solar_df, on=["Month", "Day"], how="left")
+hour_f = df["Hour"].astype(float)
+df["hours_since_sunrise"] = hour_f - df.pop("sunrise")
+df["hours_until_sunset"] = df.pop("sunset") - hour_f</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P2: Python for-loop in parse_weekday_column -->
+          <section>
+            <span class="severity-badge severity-high">High</span>
+            <h3>Python For-Loop in parse_weekday_column</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:91</div>
+            <p style="font-size: 0.7em">Iterating over every row with a Python for-loop and <code>re.match</code> is orders of magnitude slower than pandas&rsquo; built-in vectorized <code>str.extract</code>.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>weekday_num = []
+weekday_text = []
+
+for val in series.astype(str):
+    match = re.match(r"^(\d+)\s*(.*)", val.strip())
+    if match:
+        weekday_num.append(int(match.group(1)))
+        text = match.group(2).strip()
+        weekday_text.append(text if text else "Unknown")
+    else:
+        weekday_num.append(-1)
+        weekday_text.append(val.strip())</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>s = series.astype(str).str.strip()
+extracted = s.str.extract(r"^(\d+)\s*(.*)")
+weekday_num = (pd.to_numeric(extracted[0], errors="coerce")
+               .fillna(-1).astype(int))
+weekday_text = extracted[1].str.strip().replace("", "Unknown")
+return pd.DataFrame({
+    "weekday_num": weekday_num,
+    "weekday_text": weekday_text
+})</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P3: MLP DataLoader shuffle=False -->
+          <section>
+            <span class="severity-badge severity-high">High</span>
+            <h3>MLP DataLoader shuffle=False Wastes Epochs</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:883</div>
+            <p style="font-size: 0.7em">Setting <code>shuffle=False</code> on an MLP training DataLoader forces the model to see samples in fixed temporal order every epoch, degrading SGD convergence &mdash; MLPs have no sequential state, so shuffling is safe.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>train_loader_h1 = DataLoader(
+    train_dataset_h1,
+    batch_size=BATCH_SIZE,
+    shuffle=False)
+# Note: shuffle=False to preserve temporal ordering</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>train_loader_h1 = DataLoader(
+    train_dataset_h1,
+    batch_size=BATCH_SIZE,
+    shuffle=True)
+# Shuffle is safe: MLP processes each sample independently
+# and lag features already encode temporal context.</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P4: Nested iterrows in infer_year -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Nested iterrows() in infer_year</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:449</div>
+            <p style="font-size: 0.7em">For each candidate year (20 iterations), every unique (Month, Day) row is visited via <code>iterrows()</code>, creating O(years &times; unique_dates) Python-level row access.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>for yr in range(candidate_range[0], candidate_range[1] + 1):
+    ok = True
+    for _, row in sample.iterrows():
+        try:
+            d = date(yr, int(row["Month"]), int(row["Day"]))
+        except ValueError:
+            ok = False
+            break
+        if d.weekday() != int(row["Weekday"]):
+            ok = False
+            break
+    if ok:
+        matches.append(yr)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>months = sample["Month"].astype(int).values
+days = sample["Day"].astype(int).values
+weekdays = sample["Weekday"].astype(int).values
+
+for yr in range(candidate_range[0], candidate_range[1] + 1):
+    try:
+        actual_wd = np.array(
+            [date(yr, m, d).weekday()
+             for m, d in zip(months, days)])
+    except ValueError:
+        continue
+    if np.array_equal(actual_wd, weekdays):
+        matches.append(yr)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P5: Excessive df.copy() -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Excessive df.copy() in Chained Feature Functions</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:298</div>
+            <p style="font-size: 0.7em"><code>build_features</code>, <code>add_weather_features</code>, <code>add_daylight_features</code>, and <code>add_holiday_features</code> each call <code>df.copy()</code>, creating 4 full DataFrame copies during a single feature-engineering pass.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>def add_weather_features(df):
+    df = df.copy()
+    ...
+
+def add_daylight_features(df):
+    df = df.copy()
+    ...
+
+def add_holiday_features(df, year):
+    df = df.copy()
+    ...</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim># Remove df.copy() from inner functions.
+# Keep only the single copy in build_features:
+def build_features(df, ...):
+    df = df.copy()  # single defensive copy
+    # Inner functions now operate on this copy
+    df = add_weather_features(df)  # no copy
+    df = add_daylight_features(df)  # no copy
+    df = add_holiday_features(df, year)  # no copy</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P6: List comprehension in add_holiday_features -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Python List Comprehension for Date Construction</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:498</div>
+            <p style="font-size: 0.7em">Constructing <code>date()</code> objects for every row in a Python list comprehension is slow; converting to pandas DatetimeIndex and using vectorized <code>.isin()</code> is faster.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>row_dates = [date(year, int(m), int(d))
+             for m, d in zip(df["Month"], df["Day"])]
+df["is_holiday"] = np.array(
+    [1 if holiday_flag[d] else 0 for d in row_dates],
+    dtype=np.int64)
+df["is_bridge_day"] = np.array(
+    [1 if bridge_flag[d] else 0 for d in row_dates],
+    dtype=np.int64)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>dt_index = pd.to_datetime({
+    "year": year,
+    "month": df["Month"].astype(int),
+    "day": df["Day"].astype(int)
+})
+holiday_set = {d for d, v in holiday_flag.items() if v}
+bridge_set = {d for d, v in bridge_flag.items() if v}
+df["is_holiday"] = dt_index.dt.date.isin(
+    holiday_set).astype(np.int64)
+df["is_bridge_day"] = dt_index.dt.date.isin(
+    bridge_set).astype(np.int64)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- P7: Sequential LightGBM training -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>24-Horizon LightGBM Models Trained Sequentially</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:762</div>
+            <p style="font-size: 0.7em">Training 24 independent LightGBM models in a sequential for-loop leaves CPU cores idle; using <code>joblib.Parallel</code> would reduce wall-clock time significantly.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>for h in range(24):
+    model = lgb.LGBMRegressor(**lgb_params_h24)
+    model.fit(
+        X_train, y_train_h24[:, h],
+        eval_set=[(X_val, y_val_h24[:, h])],
+    )
+    lgb_h24_models.append(model)
+    pred_lgb_h24[:, h] = model.predict(X_val)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>from joblib import Parallel, delayed
+
+def _fit_one(h):
+    m = lgb.LGBMRegressor(**lgb_params_h24)
+    m.fit(X_train, y_train_h24[:, h],
+          eval_set=[(X_val, y_val_h24[:, h])])
+    return h, m, m.predict(X_val)
+
+results = Parallel(n_jobs=-1)(
+    delayed(_fit_one)(h) for h in range(24))
+for h, model, preds in sorted(results):
+    lgb_h24_models.append(model)
+    pred_lgb_h24[:, h] = preds</code></pre>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- SECURITY SECTION -->
+        <section>
+          <section>
+            <h2>&#128274; Security</h2>
+            <p>4 findings</p>
+            <div class="category-stats">
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-medium)">3</div>
+                <div class="label">Medium</div>
+              </div>
+              <div class="stat-box">
+                <div class="number" style="color: var(--severity-low)">1</div>
+                <div class="label">Low</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- S1: Path Traversal -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>Path Traversal in evaluate_final_model</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:991</div>
+            <p style="font-size: 0.7em">The function accepts arbitrary file paths without restricting traversal (e.g., <code>../../etc/passwd</code>), allowing reading of any file accessible to the notebook process.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>def evaluate_final_model(
+    new_csv_path: str,
+    trained_model_pipeline: dict,
+    horizon: int = 1,
+    year_override: int | None = None,
+) -&gt; dict:
+    path = Path(new_csv_path)
+    if path.suffix == ".xlsx":
+        df_new = pd.read_excel(path)
+    else:
+        df_new = pd.read_csv(path)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>def evaluate_final_model(
+    new_csv_path: str,
+    trained_model_pipeline: dict,
+    horizon: int = 1,
+    year_override: int | None = None,
+) -&gt; dict:
+    ALLOWED_DIR = Path(".").resolve()
+    path = Path(new_csv_path).resolve()
+    if not str(path).startswith(str(ALLOWED_DIR)):
+        raise ValueError("Path traversal detected.")
+    if not path.is_file():
+        raise FileNotFoundError(f"Not found: {path}")
+    if path.suffix == ".xlsx":
+        df_new = pd.read_excel(path)
+    else:
+        df_new = pd.read_csv(path)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- S2: SSRF via Pandas URL Loading -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>SSRF via Pandas URL Loading</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:991</div>
+            <p style="font-size: 0.7em"><code>evaluate_final_model()</code> passes user-supplied paths directly to <code>pd.read_excel()</code>/<code>pd.read_csv()</code>, which accept URLs (http://, ftp://, s3://), enabling SSRF attacks against internal services.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>path = Path(new_csv_path)
+if path.suffix == ".xlsx":
+    df_new = pd.read_excel(path)
+else:
+    df_new = pd.read_csv(path)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>path = Path(new_csv_path).resolve()
+# Block URL-based paths
+if any(new_csv_path.startswith(s)
+       for s in ("http", "ftp", "s3")):
+    raise ValueError(
+        "Remote URLs not allowed. Use a local path.")
+if not path.is_file():
+    raise FileNotFoundError(f"Not found: {path}")
+if path.suffix == ".xlsx":
+    df_new = pd.read_excel(path)
+else:
+    df_new = pd.read_csv(path)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- S3: XXE Risk -->
+          <section>
+            <span class="severity-badge severity-medium">Medium</span>
+            <h3>XXE Risk via Excel Parsing</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:991</div>
+            <p style="font-size: 0.7em"><code>pd.read_excel()</code> uses openpyxl which parses XML-based .xlsx files; a maliciously crafted Excel file could exploit XML parsing vulnerabilities depending on the openpyxl version.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>if path.suffix == ".xlsx":
+    df_new = pd.read_excel(path)
+else:
+    df_new = pd.read_csv(path)</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>if path.suffix == ".xlsx":
+    import openpyxl
+    if tuple(int(x) for x in
+             openpyxl.__version__.split('.')[:3]) &lt; (3, 0, 9):
+        raise RuntimeError(
+            "openpyxl &gt;= 3.0.9 required for XXE mitigation")
+    df_new = pd.read_excel(path, engine="openpyxl")
+else:
+    df_new = pd.read_csv(path)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <!-- S4: No Dependency Version Pinning -->
+          <section>
+            <span class="severity-badge severity-low">Low</span>
+            <h3>No Dependency Version Pinning</h3>
+            <div class="finding-file">bike_count_estimation.ipynb:16</div>
+            <p style="font-size: 0.7em">Imports do not enforce minimum versions for security-sensitive packages; a vulnerable version could be loaded without detection.</p>
+            <div class="code-comparison">
+              <div>
+                <div class="label">Before</div>
+                <pre><code class="language-python" data-trim>import numpy as np
+import pandas as pd
+import lightgbm as lgb
+import torch</code></pre>
+              </div>
+              <div>
+                <div class="label">After (Suggested Fix)</div>
+                <pre><code class="language-python" data-trim>import numpy as np
+import pandas as pd
+import lightgbm as lgb
+import torch
+
+# Enforce minimum secure versions
+assert tuple(int(x) for x in
+    pd.__version__.split('.')[:2]) &gt;= (1, 5), \
+    "pandas &gt;= 1.5 required"
+assert tuple(int(x) for x in
+    torch.__version__.split('.')[:2]) &gt;= (2, 0), \
+    "torch &gt;= 2.0 required"</code></pre>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- RECOMMENDATIONS -->
+        <section>
+          <h2>Recommendations</h2>
+          <ol class="recommendations">
+            <li><strong>Fix early stopping immediately</strong> &mdash; Use <code>copy.deepcopy(model.state_dict())</code> to actually preserve best weights. This is silently degrading MLP performance right now.</li>
+            <li><strong>Fix CV data leakage</strong> &mdash; Refit the preprocessor inside each fold to get unbiased cross-validation scores.</li>
+            <li><strong>Handle missing BikeCount in inference</strong> &mdash; Create placeholder lag/rolling columns when the target column is absent to prevent crashes on unseen test data.</li>
+            <li><strong>Enable DataLoader shuffling</strong> &mdash; Set <code>shuffle=True</code> for MLP training; lag features already encode temporal context.</li>
+            <li><strong>Vectorize feature engineering</strong> &mdash; Replace <code>df.apply(axis=1)</code> and Python for-loops with <code>str.extract</code> and <code>merge</code> for 10-50x speedup.</li>
+            <li><strong>Add input validation</strong> &mdash; Check file existence and required columns upfront for clear error messages.</li>
+          </ol>
+          <p style="margin-top: 30px; font-size: 0.6em; color: #888">
+            Generated by Code Audit Agent &mdash; 2026-05-31
+          </p>
+        </section>
+      </div>
+    </div>
+    <script src="https://unpkg.com/reveal.js@4"></script>
+    <script src="https://unpkg.com/reveal.js@4/plugin/highlight/highlight.js"></script>
+    <script>
+      Reveal.initialize({
+        hash: true,
+        slideNumber: "c/t",
+        plugins: [RevealHighlight],
+        width: 1280,
+        height: 720,
+        margin: 0.1,
+      });
+    </script>
+  </body>
+</html>
